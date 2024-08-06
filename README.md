@@ -13,7 +13,9 @@ Copy the scripts into a folder and run the create script.
        ./create <source_container_image> <working_container_name> [<ceph_git_branch>]
 
 Example:
+
        create centos:stream9 cephpacificcs9 pacific
+
        create fedora:39 cephlatest
 
 ## Notes
