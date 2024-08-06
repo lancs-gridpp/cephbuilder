@@ -1,0 +1,85 @@
+#!/bin/bash
+#
+# Copyright (c) 2024 Lancaster University
+# Author: Gerard Hand
+#
+#!/bin/bash
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+#
+
+# Terminate on sigint
+trap "exit" EXIT
+
+# Set expand_aliases option.
+shopt -s expand_aliases
+
+clear
+
+SESSION=$1
+SOURCE_IMAGE=$2
+CONTAINER_NAME=$3
+CEPH_VERSION=$4
+
+TMP_OUTPUT=/tmp/cephout.txt
+
+alias showlog='tee -a log.txt | tmux display -I -t "$SESSION:0.1"'
+
+# $1 - Command
+# $2 - Action text
+run_command() {
+    echo -n $2
+    buildah run $CONTAINER_NAME bash -c "$1" 2>&1 | showlog
+    printf "\e[%dG%s\n" 35 "done"
+}
+
+# Create the new container
+echo -n "Fetching $SOURCE_IMAGE ..."
+buildah from --name $CONTAINER_NAME $SOURCE_IMAGE 2>&1 | showlog
+echo -e "\tdone"
+
+# Update linux and install packages.
+run_command "dnf -y update" "Updating Linux..."
+run_command "dnf -y install jq" "Installing jq..."
+run_command "dnf -y install git" "Installing git..."
+
+# el[7-9]
+# enable the crb repository
+run_command "dnf -y install 'dnf-command(config-manager)'" "Adding config manager..."
+run_command "dnf config-manager --set-enabled crb" "Enabling crb..."
+
+# Get ceph code from git
+run_command "cd /root && git clone https://github.com/ceph/ceph.git;" "Cloning ceph from GitHub..."
+
+# Commands do cd command first so if the directory wasn't created, the command after will not execute.
+
+# Checkout the required version of ceph (if set)
+if [[ "$CEPH_VERSION" != "" ]];then
+    run_command "cd ~/ceph && git checkout $CEPH_VERSION" "Checkingout $CEPH_VERSIOIN"
+fi
+
+# Get the submodules and install any dependencies
+run_command "cd ~/ceph && git submodule update --force --init --recursive --progress" "Updating submodules..."
+run_command "cd ~/ceph && ./install-deps.sh" "Installing dependencies..."
+
+# Quincy and Reeef
+run_command "dnf -y install python3-routes" "Install python3-routes"
+
+# Build Ceph
+run_command "cd ~/ceph && ./do_cmake.sh" "Running make..."
+run_command "cd ~/ceph/build && ninja" "Running ninja..."
+
+echo "Done"
+
+
