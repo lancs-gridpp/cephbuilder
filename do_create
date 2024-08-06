@@ -59,6 +59,8 @@ run_command "dnf config-manager --set-enabled crb" "Enabling crb..."
 run_command "dnf -y update" "Updating Linux..."
 run_command "dnf -y install jq" "Installing jq..."
 run_command "dnf -y install git" "Installing git..."
+run_command "dnf -y install iproute" "Installing iproute..."
+run_command "dnf -y install hostname" "Installing hostname..."
 
 # Get ceph code from git
 run_command "cd /root && git clone https://github.com/ceph/ceph.git;" "Cloning ceph from GitHub..."
