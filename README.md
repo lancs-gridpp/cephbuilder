@@ -1,7 +1,7 @@
 # cephbuilder
 
 ## Description
-Very basic scripts to fetch the ceph source code and build it in a docker container.
+Very basic scripts to fetch the ceph source code and build it in a docker container. You can do the same with Dockerfile but this gives a better idea of progress.
 
 You will need tmux, buidah and docker/podman to use this script. The script doesn't do the final buidah commit of the container to create a new image.
 The script only does the basics so there isn't a lot of error checking on inputs.  The progress panel doesn't show errors so you may need to check the log panel/file.
